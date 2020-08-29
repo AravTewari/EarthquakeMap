@@ -1,0 +1,118 @@
+package module4;
+
+import de.fhpotsdam.unfolding.data.PointFeature;
+import de.fhpotsdam.unfolding.marker.SimplePointMarker;
+import processing.core.PGraphics;
+
+/**
+ * Implements a visual marker for earthquakes on an earthquake map
+ * 
+ * @author Arav Tewari
+ *
+ */
+public abstract class EarthquakeMarker extends SimplePointMarker
+{
+
+	// Did the earthquake occur on land? This will be set by the subclasses.
+	protected boolean isOnLand;
+
+	// SimplePointMarker has a field "radius" which is inherited
+	// by Earthquake marker:
+	// protected float radius;
+	//
+	// You will want to set this in the constructor, either
+	// using the thresholds below, or a continuous function
+	// based on magnitude.
+
+	public static final float THRESHOLD_MODERATE = 5;
+	public static final float THRESHOLD_LIGHT = 4;
+	public static final float THRESHOLD_INTERMEDIATE = 70;
+	public static final float THRESHOLD_DEEP = 300;
+
+	public static final float RED_COLOR = 255;
+	public static final float GREEN_COLOR = 255;
+	public static final float BLUE_COLOR = 255;
+
+	public abstract void drawEarthquake(PGraphics pg, float x, float y);
+
+	// constructor
+	public EarthquakeMarker(PointFeature feature)
+	{
+		super(feature.getLocation());
+		// Add a radius property and then set the properties
+		java.util.HashMap<String, Object> properties = feature.getProperties();
+		float magnitude = Float.parseFloat(properties.get("magnitude").toString());
+		properties.put("radius", 2 * magnitude);
+		setProperties(properties);
+		this.radius = 1.75f * getMagnitude();
+	}
+
+	public void draw(PGraphics pg, float x, float y)
+	{
+		// save previous styling
+		pg.pushStyle();
+
+		colorDetermine(pg);
+		drawEarthquake(pg, x, y);
+		
+		String age = getStringProperty("age");
+		if (age.equals("Past Day"))
+		{
+			pg.stroke(0);
+			pg.strokeWeight(2);
+			pg.line(x + radius, y - radius, x - radius, y + radius);
+			pg.line(x - radius, y - radius, x + radius, y + radius);
+		}
+
+		// reset to previous styling
+		pg.popStyle();
+
+	}
+	
+	private void colorDetermine(PGraphics pg)
+	{
+		if (getDepth() > 0 && getDepth() <= THRESHOLD_INTERMEDIATE)
+		{
+			pg.fill(RED_COLOR, GREEN_COLOR, 0);
+		}
+		else if (getDepth() > THRESHOLD_INTERMEDIATE && getDepth() <= THRESHOLD_DEEP)
+		{
+			pg.fill(0, 0, BLUE_COLOR);
+		}
+		else
+		{
+			pg.fill(RED_COLOR, 0, 0);
+		}
+	}
+
+	public float setMarkerSize()
+	{
+		return getRadius() + getMagnitude();
+	}
+
+	public float getMagnitude()
+	{
+		return Float.parseFloat(getProperty("magnitude").toString());
+	}
+
+	public float getDepth()
+	{
+		return Float.parseFloat(getProperty("depth").toString());
+	}
+
+	public String getTitle()
+	{
+		return (String) getProperty("title");
+
+	}
+
+	public float getRadius()
+	{
+		return Float.parseFloat(getProperty("radius").toString());
+	}
+
+	public boolean isOnLand()
+	{
+		return isOnLand;
+	}
+}
